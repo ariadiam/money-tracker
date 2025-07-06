@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 /**
  * Get all transactions for a user (sorted by date, newest first)
  */
-async function getByUserId(userId) {
+async function getByUserId(userId, { limit = 50, skip = 0 } = {}) {
   return await Transaction.find({ user: userId })
     .sort({ date: -1 })
+    .skip(skip)
+    .limit(limit)
     .exec();
 }
 
@@ -20,7 +22,11 @@ async function create(userId, transactionData) {
     // Ensure date is set (defaults to now if not provided)
     date: transactionData.date || new Date() 
   });
+  try {
   return await transaction.save();
+  } catch (error) {
+    throw new Error(`Error creating transaction: ${error.message}`);
+  }
 }
 
 /** 
@@ -42,15 +48,11 @@ async function update (transactionId, userId, updateData) {
   if (Object.keys(updates).length === 0) {
     throw new Error('No valid fields provided for update');
   }
-
   const updatedTransaction = await Transaction.findOneAndUpdate(
-    {
-      _id: transactionId,
-      user: userId  
-    },
-    updates,
-    { new: true, runValidators: true }  
-  );
+  { _id: transactionId, user: userId },
+  { $set: updates },
+  { new: true, runValidators: true }
+);
 
   if (!updatedTransaction) {
     throw new Error('Transaction not found or unauthorized');
@@ -63,6 +65,9 @@ async function update (transactionId, userId, updateData) {
  * Delete a transaction by ID (only if it belongs to the user)
  */
 async function deleteById(transactionId, userId) {
+  if (!mongoose.Types.ObjectId.isValid(transactionId)) {
+  throw new Error('Invalid transaction ID');
+}
   return await Transaction.findOneAndDelete({
     _id: transactionId,
     user: userId // Ensures users can only delete their own transactions
