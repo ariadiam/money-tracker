@@ -44,16 +44,23 @@ exports.addTransaction = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
   console.log("Update transaction with ID:", req.params.transactionId, "for user with ID:", req.params.userId);
-  const { userId, transactionId } = req.params;
   try {
     const updatedTransaction = await transactionService.update(
-      transactionId,
-      userId,
-      req.body  // { amount?, type?, category? }
+      req.params.transactionId,
+      req.params.userId,
+      req.body
     );
-    res.status(200).json({ status: true, data: updatedTransaction });
+    res.status(200).json({ 
+      status: true, 
+      data: updatedTransaction,
+      message: "Transaction updated successfully" 
+    });
   } catch (err) {
-    res.status(400).json({ status: false, error: err.message });
+    console.log("Error in updating transaction", err);
+    res.status(400).json({ 
+      status: false, 
+      data: err,
+    });
   }
 };
 
