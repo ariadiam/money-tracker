@@ -26,7 +26,7 @@ async function create(userId, transactionData) {
 /** 
  * Update a transaction by ID (only if it belongs to the user)
  */
-exports.update = async (transactionId, userId, updateData) => {
+async function update (transactionId, userId, updateData) {
   if (!mongoose.Types.ObjectId.isValid(transactionId)) {
     throw new Error('Invalid transaction ID');
   }
@@ -98,6 +98,7 @@ async function getSummary(userId) {
 module.exports = {
   getByUserId,
   create,
+  update,
   deleteById,
   getSummary
 };
