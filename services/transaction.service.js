@@ -23,6 +23,42 @@ async function create(userId, transactionData) {
   return await transaction.save();
 }
 
+/** 
+ * Update a transaction by ID (only if it belongs to the user)
+ */
+exports.update = async (transactionId, userId, updateData) => {
+  if (!mongoose.Types.ObjectId.isValid(transactionId)) {
+    throw new Error('Invalid transaction ID');
+  }
+
+  const allowedUpdates = ['amount', 'type', 'category', 'description', 'date'];
+  const updates = {};
+  for (const key in updateData) {
+    if (allowedUpdates.includes(key)) {
+      updates[key] = updateData[key];
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No valid fields provided for update');
+  }
+
+  const updatedTransaction = await Transaction.findOneAndUpdate(
+    {
+      _id: transactionId,
+      user: userId  
+    },
+    updates,
+    { new: true, runValidators: true }  
+  );
+
+  if (!updatedTransaction) {
+    throw new Error('Transaction not found or unauthorized');
+  }
+
+  return updatedTransaction;
+};
+
 /**
  * Delete a transaction by ID (only if it belongs to the user)
  */
