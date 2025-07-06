@@ -42,6 +42,21 @@ exports.addTransaction = async (req, res) => {
   }
 };
 
+exports.updateTransaction = async (req, res) => {
+  console.log("Update transaction with ID:", req.params.transactionId, "for user with ID:", req.params.userId);
+  const { userId, transactionId } = req.params;
+  try {
+    const updatedTransaction = await transactionService.update(
+      transactionId,
+      userId,
+      req.body  // { amount?, type?, category? }
+    );
+    res.status(200).json({ status: true, data: updatedTransaction });
+  } catch (err) {
+    res.status(400).json({ status: false, error: err.message });
+  }
+};
+
 // Delete a transaction
 exports.deleteTransaction = async (req, res) => {
   console.log("Delete transaction with ID:", req.params.transactionId, "for user with ID:", req.params.userId);

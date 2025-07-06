@@ -8,6 +8,9 @@ router.get('/:userId/transactions', transactionController.getUserTransactions);
 // Add a new transaction
 router.post('/:userId/transactions', transactionController.addTransaction);
 
+// Update a transaction
+router.patch('/:userId/transactions/:transactionId', transactionController.updateTransaction);
+
 // Delete a transaction
 router.delete('/:userId/transactions/:transactionId', transactionController.deleteTransaction);
 
