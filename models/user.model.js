@@ -19,6 +19,7 @@ let userSchema = new mongoose.Schema({
   password: { 
     type: String, 
     required: [true, "Password is a required field"],
+    select: false,
     max: 20
   },
   firstname: { 
