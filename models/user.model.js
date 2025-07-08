@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 let phoneSchema = new mongoose.Schema({
   type: {type: String},
@@ -48,9 +49,20 @@ userSchema.pre('save', async function () {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-// Method to compare passwords during login
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  // Explicitly fetch password if not already loaded
+  if (!this.password) {
+    const user = await User.findById(this._id).select('+password');
+    return await bcrypt.compare(enteredPassword, user.password);
+  }
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    delete ret.password;  // Exclude password from responses
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('User', userSchema);
