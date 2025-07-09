@@ -11,5 +11,5 @@ mongoose.connect(process.env.MONGODB_URI)
   });
 
 app.listen(port, () => {
-  console.log("Servier is up")
+  console.log("Server is up")
 });
