@@ -40,10 +40,16 @@ let userSchema = new mongoose.Schema({
       lowercase: true,
       unique: true 
     },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+      required: true
+    },
     phone: {
-      type: [phoneSchema], null: true}
+      type: [phoneSchema], null: true
     }
-  , { timestamps: true });
+  }, { timestamps: true });
 
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
