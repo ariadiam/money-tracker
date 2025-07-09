@@ -5,6 +5,7 @@ const { JWT_SECRET } = process.env;
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
+  console.log('Login attempt for user:', username);
 
   if (!username || !password) {
     return res.status(400).json({
@@ -14,8 +15,10 @@ exports.login = async (req, res) => {
   }
 
   try {
+    console.log('Fetching user from database:', username);
     const user = await User.findOne({ username }).select('+password');
     if (!user) {
+      console.log('User not found:', username);
       return res.status(404).json({ 
         status: false, 
         error: 'User not found' 
@@ -35,7 +38,7 @@ exports.login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     );
-    
+
     const { password: _, ...userData } = user.toObject();
     res.status(200).json({
       status: true,
@@ -54,3 +57,47 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+
+exports.register = async (req, res) => {
+  const { username, password, firstname, lastname, email, phone } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ $or: { username, email } });
+    if (existingUser) {
+      return res.status(400).json({
+        status: false,
+        error: 'Username or email already exists'
+      });
+    }
+
+    const newUser = await User.create({
+      username,
+      password,
+      firstname,
+      lastname,
+      email,
+      phone
+    });
+
+    await newUser.save();
+
+    const token = newUser.generateAuthToken();
+    const { password: _, ...userData } = newUser.toObject();
+    res.status(201).json({
+      status: true,
+      data: {
+        user: userData,
+        token
+      },
+      message: 'User registered successfully'
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      status: false,
+      error: 'Registration failed, please try again.'
+    });
+  }
+}
