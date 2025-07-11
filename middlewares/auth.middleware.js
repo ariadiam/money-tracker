@@ -24,6 +24,30 @@ module.exports = (req, res, next) => {
   next();
 }
 
+function verifyRoles(allowedRole) {
+  return (req, res, nexr) => {
+    if((!req.user || !req.user.role)) {
+      return res.status(403).json({
+        status: false,
+        message: 'Access denied, no user role found'
+      });
+    }
+
+    const userRole = req.user.role;
+    const hasPermission = userRole.includes(allowedRole);
+
+    if (!hasPermission) {
+      return res.status(403).json({
+        status: false,
+        message: "Access denied, insufficient permissions"
+      })
+    }
+
+    next();
+  }
+}
+
 module.exports = {
-  verifyToken
+  verifyToken,
+  verifyRoles
 }
