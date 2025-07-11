@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
+const { verifyToken } = require('../services/auth.service');
 
-function verifyToken(req, res, next) {
+module.exports = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token =  authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({
@@ -11,18 +12,16 @@ function verifyToken(req, res, next) {
     });
   }
 
-  const secret = process.env.JWT_SECRET;
-
-  try { 
-    const decoded = jwt.verify(token, secret);
-    console.log('Token verified:', decoded);
-    next();
-  } catch (err) {
-    return res.status(404).json({
+  const { verified, payload, error } = verifyToken(token);
+  if (!verified) {
+    return res.status(401).json({
       status: false,
-      data: err
-    })
+      message: error || 'Invalid token'
+    });
   }
+
+  req.user = payload;
+  next();
 }
 
 module.exports = {

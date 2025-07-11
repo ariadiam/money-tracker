@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/user.model'); 
 
 function generateAccessToken(user) {
   console.log("Auth service: ", user)
@@ -36,8 +38,15 @@ async function validateCredentials(username, password) {
 }
 
 async function checkExistingUser(username, email) {
-  const user = await User.findOne({ $or: { username, email } });
-  if (user) throw new Error('User already exists');
+  console.log(`[checkExistingUser] Called with username: ${username}, email: ${email}`);
+  const user = await User.findOne({
+    $or: [
+      { username }, 
+      { email }    
+    ]
+  });
+  if (user) 
+   throw new Error('User already exists');
   return user;
 }
 

@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
+const { generateAccessToken, verifyToken, validateCredentials, checkExistingUser } = require('../services/auth.service');
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -15,89 +16,61 @@ exports.login = async (req, res) => {
   }
 
   try {
-    console.log('Fetching user from database:', username);
-    const user = await User.findOne({ username }).select('+password');
-    if (!user) {
-      console.log('User not found:', username);
-      return res.status(404).json({ 
-        status: false, 
-        error: 'User not found' 
-      });
-    }
+    const user = await validateCredentials(username, password);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ 
-        status: false, 
-        error: 'Invalid credentials'
-      });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
+    const token = generateAccessToken(user);
 
     const { password: _, ...userData } = user.toObject();
     res.status(200).json({
       status: true,
-      data: {
-        user: userData,
-        token
-      },
+      data: { user: userData, token },
       message: 'Login successful'
     });
 
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      status: false, 
-      error: 'Internal server error' 
+    console.error('Login error:', error.message);
+    const statusCode = 
+    error.message === 'User not found' ? 404 :
+    error.message === 'Invalid credentials' ? 401 : 500;
+
+    res.status(statusCode).json({
+      status: false,
+      error: error.message || 'Login failed, please try again.'
     });
   }
-};
-
+}
 
 exports.register = async (req, res) => {
   const { username, password, firstname, lastname, email, phone } = req.body;
 
   try {
-    const existingUser = await User.findOne({ $or: { username, email } });
-    if (existingUser) {
-      return res.status(400).json({
-        status: false,
-        error: 'Username or email already exists'
-      });
-    }
+    await checkExistingUser(username, email);
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       username,
-      password,
+      password: hashedPassword,
       firstname,
       lastname,
       email,
-      phone
+      phone,
+      role: 'user'
     });
+    const token = generateAccessToken(newUser);
 
-    await newUser.save();
-
-    const token = newUser.generateAuthToken();
     const { password: _, ...userData } = newUser.toObject();
     res.status(201).json({
       status: true,
-      data: {
-        user: userData,
-        token
-      },
+      data: { user: userData, token },
       message: 'User registered successfully'
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
+    console.error('Registration error:', error.message);
+    const statusCode = error.message === 'User already exists' ? 400 : 500;
+    res.status(statusCode).json({
       status: false,
-      error: 'Registration failed, please try again.'
+      error: error.message || 'Registration failed, please try again.'
     });
   }
 }
