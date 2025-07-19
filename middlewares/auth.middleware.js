@@ -25,7 +25,7 @@ module.exports = (req, res, next) => {
 }
 
 function verifyRoles(allowedRole) {
-  return (req, res, nexr) => {
+  return (req, res, next) => {
     if((!req.user || !req.user.role)) {
       return res.status(403).json({
         status: false,
@@ -34,9 +34,8 @@ function verifyRoles(allowedRole) {
     }
 
     const userRole = req.user.role;
-    const hasPermission = userRole.includes(allowedRole);
 
-    if (!hasPermission) {
+    if (!allowedRole.inclusdes(userRole)) {
       return res.status(403).json({
         status: false,
         message: "Access denied, insufficient permissions"
