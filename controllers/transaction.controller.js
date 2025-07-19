@@ -8,13 +8,15 @@ exports.getUserTransactions = async (req, res) => {
     const transactions = await transactionService.getByUserId(req.params.userId);
     res.status(200).json({
       status: true,
-      data: transactions
+      data: transactions,
+      message: "Transactions retrieved successfully"
     });
   } catch (err) {
     console.log("Error in retrieving transactions", err);
     res.status(400).json({
       status: false,
-      data: err 
+      data: null,
+      message: "Error in retrieving transactions"
     });
   }
 };
@@ -37,7 +39,8 @@ exports.addTransaction = async (req, res) => {
     console.log("Error in adding transaction", err);
     res.status(400).json({
       status: false,
-      data: err
+      data: null,
+      message: "Error in adding transaction"
     });
   }
 };
@@ -59,7 +62,8 @@ exports.updateTransaction = async (req, res) => {
     console.log("Error in updating transaction", err);
     res.status(400).json({ 
       status: false, 
-      data: err,
+      data: null,
+      message: "Error in updating transaction"
     });
   }
 };
@@ -81,7 +85,8 @@ exports.deleteTransaction = async (req, res) => {
     console.log("Error in deleting transaction", err);
     res.status(400).json({
       status: false,
-      data: err
+      data: null,
+      message: "Error in deleting transaction"
     });
   }
 };
@@ -94,13 +99,15 @@ exports.getSummary = async (req, res) => {
     const summary = await transactionService.getSummary(req.params.userId);
     res.status(200).json({
       status: true,
-      data: summary
+      data: summary,
+      message: "Financial summary retrieved successfully"
     });
   } catch (err) {
     console.log("Error in retrieving financial summary", err);
     res.status(400).json({
       status: false,
-      data: err
+      data: null,
+      message: "Error in retrieving financial summary"
     });
   }
 };

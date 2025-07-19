@@ -11,7 +11,8 @@ exports.login = async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({
       status: false,
-      error: 'Username and password are required'
+      data: null,
+      message: 'Username and password are required'
     });
   }
 
@@ -35,7 +36,8 @@ exports.login = async (req, res) => {
 
     res.status(statusCode).json({
       status: false,
-      error: error.message || 'Login failed, please try again.'
+      data: null,
+      message: error.message || 'Login failed, please try again.'
     });
   }
 }
@@ -70,7 +72,8 @@ exports.register = async (req, res) => {
     const statusCode = error.message === 'User already exists' ? 400 : 500;
     res.status(statusCode).json({
       status: false,
-      error: error.message || 'Registration failed, please try again.'
+      data: null,
+      message: error.message || 'Registration failed, please try again.'
     });
   }
 }

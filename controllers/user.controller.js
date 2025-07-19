@@ -1,6 +1,9 @@
 const User = require('../models/user.model');
 const userService = require('../services/user.service');
 const Transaction = require('../models/transaction.model');
+const bcrypt = require('bcryptjs');
+
+const logger = require('../logger/logger');
 
 exports.findAll = async(req, res) => {
   console.log("Find all users from collection users");
@@ -15,9 +18,11 @@ exports.findAll = async(req, res) => {
   });
 } catch (err) {
   console.log("Error in retrieving users:", err);
+  logger.error("ERROR, problem in retrieving users", err);
   res.status(400).json({
     status: false,
-    data: err
+    data: null,
+    message: "Error in retrieving users"
   })
   }
 }
@@ -33,10 +38,12 @@ exports.findOne = async(req, res) => {
     res.status(200).json({
       status: true,
       data: result,
+      message: "User retrieved successfully"
     });
   } else {
     res.status(404).json({
       status: false,
+      data: null,
       message: "User not found"
     });
   }
@@ -44,7 +51,8 @@ exports.findOne = async(req, res) => {
     console.log("Error in retrieving user:", err)
     res.status(400).json({
       status: false,
-      data: err
+      data:null,
+      message: "Error in retrieving user"
     });
   }
 }
@@ -75,7 +83,8 @@ exports.create = async(req, res) => {
     console.log("Error in creating user:", err);
     res.status(400).json({
       status: false,
-      data: err
+      data: null,
+      message: "Error in creating user"
     });
   }
 }
@@ -117,7 +126,8 @@ exports.updateById = async (req, res) => {
     console.error("Error updating user:", err);
     res.status(400).json({
       status: false,
-      error: err.message // Send only error message (security best practice)
+      data: null,
+      message: err.message 
     });
   }
 };
@@ -131,11 +141,11 @@ exports.deleteById = async (req, res) => {
     if (!result) {
       return res.status(404).json({
         status: false,
+        data: null,
         message: "User not found"
       });
     }
 
-    // Optional: Delete all transactions associated with the user
     await Transaction.deleteMany({ user: userId });
 
     res.status(200).json({
@@ -147,7 +157,8 @@ exports.deleteById = async (req, res) => {
     console.log("Error deleting user:", err);
     res.status(400).json({
       status: false,
-      error: err.message // Send error message instead of full error object
+      data: null,
+      message: err.message 
     });
   }
 };
