@@ -6,19 +6,18 @@ const bcrypt = require('bcryptjs');
 const logger = require('../logger/logger');
 
 exports.findAll = async(req, res) => {
-  console.log("Find all users from collection users");
+  logger.info("Retrieving all users");
 
   try {
-    // const result = await User.find();
     const result = await userService.findAll();
+    logger.info("Success in retrieving all users");
   res.status(200).json({
     status: true,
     data: result,
     message: "Users retrieved successfully"
   });
-  logger.info("Success in retrieving all users");
+  
 } catch (err) {
-  console.log("Error in retrieving users:", err);
   logger.error("Problem in retrieving users", err);
   res.status(400).json({
     status: false,
@@ -29,19 +28,21 @@ exports.findAll = async(req, res) => {
 }
 
 exports.findOne = async(req, res) => {
-  console.log("Find user with id:", userId);
   let userId = req.params.userId;
+  logger.info(`Retrieving user with ID: ${userId}`);
 
   try {
-    // const result = await User.findOne({ username: username });
     const result = await userService.findOne(userId);
+
     if (result) {
+    logger.info(`User ${userId} found`);
     res.status(200).json({
       status: true,
       data: result,
       message: "User retrieved successfully"
     });
   } else {
+    logger.warn(`User ${userId} not found`);
     res.status(404).json({
       status: false,
       data: null,
@@ -49,7 +50,7 @@ exports.findOne = async(req, res) => {
     });
   }
  } catch (err) {
-    console.log("Error in retrieving user:", err)
+    logger.error("Error retrieving user", { error: err });
     res.status(400).json({
       status: false,
       data:null,
@@ -59,8 +60,8 @@ exports.findOne = async(req, res) => {
 }
 
 exports.create = async(req, res) => {
-  console.log("Create a new user");
   let data = req.body;
+  logger.info("Attempting to create new user", { username: data.username });
   const SaltOrRounds = 10;
   const hashedPassword = await bcrypt.hash(data.password, SaltOrRounds);
 
@@ -75,13 +76,15 @@ exports.create = async(req, res) => {
 
   try {
     const result = await newUser.save();
+    logger.info(`User ${data.username} created successfully`);
+
     res.status(200).json({
       status: true,
       data: result,
       message: "User created successfully"
     });
   } catch (err) {
-    console.log("Error in creating user:", err);
+    logger.error("Error in creating user", { error: err });
     res.status(400).json({
       status: false,
       data: null,
@@ -92,6 +95,8 @@ exports.create = async(req, res) => {
 
 exports.updateById = async (req, res) => {
   const userId = req.params.userId; 
+  logger.info(`Updating user with ID: ${userId}`);
+
   const updateData = {
     firstname: req.body.firstname,
     lastname: req.body.lastname,
@@ -111,6 +116,7 @@ exports.updateById = async (req, res) => {
     );
 
     if (!updatedUser) {
+      logger.warn(`User ${userId} not found for update`);
       return res.status(404).json({ 
         status: false, 
         data: null,
@@ -118,13 +124,14 @@ exports.updateById = async (req, res) => {
       });
     }
 
+    logger.info(`User ${userId} updated successfully`);
     res.status(200).json({
       status: true,
       data: updatedUser,
       message: "User updated successfully"
     });
   } catch (err) {
-    console.error("Error updating user:", err);
+    logger.error("Error updating user", { error: err });
     res.status(400).json({
       status: false,
       data: null,
@@ -135,11 +142,12 @@ exports.updateById = async (req, res) => {
 
 exports.deleteById = async (req, res) => {
   const userId = req.params.userId; 
-  console.log("Delete user with ID:", userId);
+ logger.info(`Attempting to delete user with ID: ${userId}`);
 
   try {
     const result = await User.findByIdAndDelete(userId); 
     if (!result) {
+       logger.warn(`User ${userId} not found for deletion`);
       return res.status(404).json({
         status: false,
         data: null,
@@ -148,6 +156,7 @@ exports.deleteById = async (req, res) => {
     }
 
     await Transaction.deleteMany({ user: userId });
+    logger.info(`User ${userId} and associated transactions deleted`);
 
     res.status(200).json({
       status: true,
@@ -155,7 +164,7 @@ exports.deleteById = async (req, res) => {
       message: "User and associated transactions deleted successfully"
     });
   } catch (err) {
-    console.log("Error deleting user:", err);
+    logger.error("Error deleting user", { error: err });
     res.status(400).json({
       status: false,
       data: null,

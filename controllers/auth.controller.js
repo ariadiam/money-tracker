@@ -3,12 +3,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
 const { generateAccessToken, verifyToken, validateCredentials, checkExistingUser } = require('../services/auth.service');
+const logger = require('../logger/logger');
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
-  console.log('Login attempt for user:', username);
+  logger.info(`Login attempt for username: ${username}`);
 
   if (!username || !password) {
+    logger.warn('Missing username or password during login attempt');
     return res.status(400).json({
       status: false,
       data: null,
@@ -22,6 +24,7 @@ exports.login = async (req, res) => {
     const token = generateAccessToken(user);
 
     const { password: _, ...userData } = user.toObject();
+    logger.info(`User logged in successfully: ${username}`);
     res.status(200).json({
       status: true,
       data: { user: userData, token },
@@ -34,6 +37,7 @@ exports.login = async (req, res) => {
     error.message === 'User not found' ? 404 :
     error.message === 'Invalid credentials' ? 401 : 500;
 
+    logger.error(`Login failed for username: ${username}`, { error: error.message });
     res.status(statusCode).json({
       status: false,
       data: null,
@@ -44,6 +48,7 @@ exports.login = async (req, res) => {
 
 exports.register = async (req, res) => {
   const { username, password, firstname, lastname, email, phone } = req.body;
+  logger.info(`Registration attempt for username: ${username}, email: ${email}`);
 
   try {
     await checkExistingUser(username, email);
@@ -61,6 +66,7 @@ exports.register = async (req, res) => {
     const token = generateAccessToken(newUser);
 
     const { password: _, ...userData } = newUser.toObject();
+    logger.info(`User registered successfully: ${username}`);
     res.status(201).json({
       status: true,
       data: { user: userData, token },
@@ -68,8 +74,8 @@ exports.register = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Registration error:', error.message);
     const statusCode = error.message === 'User already exists' ? 400 : 500;
+    logger.error(`Registration failed for username: ${username}`, { error: error.message });
     res.status(statusCode).json({
       status: false,
       data: null,
