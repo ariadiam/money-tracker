@@ -60,8 +60,8 @@ exports.findOne = async(req, res) => {
 exports.create = async(req, res) => {
   console.log("Create a new user");
   let data = req.body;
-  // const SaltOrRounds = 10;
-  // const hashedPassword = await bcrypt.hash(data.password, SaltOrRounds);
+  const SaltOrRounds = 10;
+  const hashedPassword = await bcrypt.hash(data.password, SaltOrRounds);
 
   const newUser = new User({
     username: data.username,
@@ -113,6 +113,7 @@ exports.updateById = async (req, res) => {
     if (!updatedUser) {
       return res.status(404).json({ 
         status: false, 
+        data: null,
         message: "User not found" 
       });
     }
