@@ -16,9 +16,10 @@ exports.findAll = async(req, res) => {
     data: result,
     message: "Users retrieved successfully"
   });
+  logger.info("Success in retrieving all users");
 } catch (err) {
   console.log("Error in retrieving users:", err);
-  logger.error("ERROR, problem in retrieving users", err);
+  logger.error("Problem in retrieving users", err);
   res.status(400).json({
     status: false,
     data: null,
