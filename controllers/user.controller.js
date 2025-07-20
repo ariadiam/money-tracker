@@ -65,7 +65,7 @@ exports.create = async(req, res) => {
 
   const newUser = new User({
     username: data.username,
-    password: data.password, // hashedPassword,
+    password: data.password, 
     firstname: data.firstname,
     lastname: data.lastname,
     email: data.email,
@@ -98,7 +98,6 @@ exports.updateById = async (req, res) => {
     phone: req.body.phone
   };
 
-  // Hash password only if provided
   if (req.body.password) {
     updateData.password = await bcrypt.hash(req.body.password, 10);
   }
