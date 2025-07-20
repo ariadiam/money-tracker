@@ -41,9 +41,10 @@ let userSchema = new mongoose.Schema({
       unique: true 
     },
     roles: {
-      type:[String], 
-      null: true
-    },
+  type: [String],
+  enum: ['user', 'admin'],
+  default: ['user']
+},
     phone: {
       type: [phoneSchema], null: true
     }
