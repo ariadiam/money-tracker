@@ -83,3 +83,44 @@ exports.register = async (req, res) => {
     });
   }
 }
+
+exports.googleLogin = async (req, res) => {
+  const code = req.query.code;
+  logger.info(`Google login attempt with code: ${code}`);
+
+  if (!code) {
+    logger.warn('Google login code is missing');
+    return res.status(400).json({
+      status: false,
+      data: null,
+      message: 'Google login code is required'
+    });
+  } 
+  try {
+    let user = await authService.googleAuth(code);
+
+  if (!user) {
+      logger.warn('Google login failed: No user returned from auth service');
+      return res.status(404).json({
+        status: false,
+        data: null,
+        message: 'Google login failed, user not found'
+      });
+    }
+
+    logger.info(`Google login successful for user: ${user.username}`);
+    res.status(200).json({
+      status: true,
+      data: user,
+      message: 'Google login successful'
+    });
+
+  } catch (error) {
+    logger.error('Google login error', { error: error.message });
+    res.status(500).json({
+      status: false,
+      data: null,
+      message: 'Internal server error during Google login'
+    });
+  }
+}
