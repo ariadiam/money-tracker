@@ -52,18 +52,18 @@ async function checkExistingUser(username, email) {
 }
 
 async function googleAuth(code) {
-  console.log("Google login");
+  console.log("Google login", code);
   const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
-  const OAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+  const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
   try {
-    const { tokens } = await OAuth2Client.getToken(code);
-    OAuth2Client.setCredentials(tokens);
+    const { tokens } = await oAuth2Client.getToken(code);
+    oAuth2Client.setCredentials(tokens);
 
-    const ticket = await OAuth2Client.verifyIdToken({
+    const ticket = await oAuth2Client.verifyIdToken({
       idToken: tokens.id_token,
       audience: CLIENT_ID
     });
@@ -74,9 +74,7 @@ async function googleAuth(code) {
     }
   } catch (error) {
     console.error("Google Auth Error: ", error);
-    return {
-      error: 'Google authentication failed'
-    }
+    throw new Error("Google authentication failed: " + error.message);
   }
 }
 
