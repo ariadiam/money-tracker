@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = process.env;
 const { generateAccessToken, verifyToken, validateCredentials, checkExistingUser } = require('../services/auth.service');
 const logger = require('../logger/logger');
+const authService = require('../services/auth.service');
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -97,9 +98,9 @@ exports.googleLogin = async (req, res) => {
     });
   } 
   try {
-    let user = await authService.googleAuth(code);
+    const { user, tokens } = await authService.googleAuth(code);
 
-  if (!user) {
+  if (!user || typeof user !== 'object') {
       logger.warn('Google login failed: No user returned from auth service');
       return res.status(404).json({
         status: false,
@@ -108,7 +109,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    logger.info(`Google login successful for user: ${user.username}`);
+    logger.info(`Google login successful for user: ${user?.email || 'unknown'}`);
     res.status(200).json({
       status: true,
       data: user,
@@ -116,7 +117,7 @@ exports.googleLogin = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Google login error', { error: error.message });
+    logger.error(`Internal server error during Google login: ${error.message}`);
     res.status(500).json({
       status: false,
       data: null,
