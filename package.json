@@ -13,11 +13,16 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
     "dotenv": "^16.6.0",
     "express": "^5.1.0",
+    "google-auth-library": "^10.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
     "mongoose-to-swagger": "^1.5.1",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "winston-mongodb": "^7.0.0"
   }
 }
