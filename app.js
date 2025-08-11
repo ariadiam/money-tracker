@@ -13,7 +13,7 @@ const transactionRoutes = require('./routes/transaction.routes');
 const authRoutes = require('./routes/auth.routes');
 
 app.use(cors({
-  origin: ['http://localhost:3000']
+  origin: ['http://localhost:4200']
 }))
 
 app.use('/api/auth', authRoutes);
