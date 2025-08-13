@@ -3,11 +3,11 @@ const logger = require('../logger/logger');
 
 // Get all transactions for a user
 exports.getUserTransactions = async (req, res) => {
-  const userId = req.params.userId;
+  const userId = req.user.userId
   logger.info(`Fetching all transactions for user ID: ${userId}`);
 
   try {
-    const transactions = await transactionService.getByUserId(req.params.userId);
+    const transactions = await transactionService.getByUserId(userId);
     logger.info(`Successfully retrieved ${transactions.length} transactions for user ID: ${userId}`);
     res.status(200).json({
       status: true,
@@ -26,14 +26,11 @@ exports.getUserTransactions = async (req, res) => {
 
 // Add a new transaction
 exports.addTransaction = async (req, res) => {
-  const userId = req.user.id; 
+  const userId = req.user.userId; 
   logger.info(`Adding new transaction for user ID: ${userId}`, { transactionData: req.body });
 
   try {
-    const transaction = await transactionService.create(
-      userId,  
-      req.body
-    );
+    const transaction = await transactionService.create(userId, req.body);
 
     logger.info(`Transaction created successfully for user ID: ${userId}`, { transactionId: transaction._id });
 
@@ -44,25 +41,27 @@ exports.addTransaction = async (req, res) => {
     });
 
   } catch (err) {
-    logger.error(`Error adding transaction for user ID: ${userId}`, { error: err });
+    logger.error(`Error adding transaction for user ID: ${userId}`, { 
+      errorMessage: err.message, 
+      errorStack: err.stack, 
+      errorName: err.name 
+    });
     res.status(400).json({
       status: false,
       data: null,
-      message: "Error in adding transaction"
+      message: "Error in adding transaction",
+      error: err.message
     });
   }
 };
 
 exports.updateTransaction = async (req, res) => {
-   const { transactionId, userId } = req.params;
+  const transactionId = req.params.transactionId;
+  const userId = req.user.userId;;
   logger.info(`Updating transaction ID: ${transactionId} for user ID: ${userId}`);
 
   try {
-    const updatedTransaction = await transactionService.update(
-      req.params.transactionId,
-      req.params.userId,
-      req.body
-    );
+    const updatedTransaction = await transactionService.update(transactionId, userId, req.body);
     logger.info(`Transaction ${transactionId} updated for user ID: ${userId}`);
     res.status(200).json({ 
       status: true, 
@@ -81,14 +80,12 @@ exports.updateTransaction = async (req, res) => {
 
 // Delete a transaction
 exports.deleteTransaction = async (req, res) => {
-  const { transactionId, userId } = req.params;
+  const transactionId = req.params.transactionId;
+  const userId = req.user.userId;;
   logger.info(`Deleting transaction ID: ${transactionId} for user ID: ${userId}`);
 
   try {
-    await transactionService.deleteById(
-      req.params.transactionId,
-      req.params.userId
-    );
+    await transactionService.deleteById(transactionId, userId);
     logger.info(`Transaction ${transactionId} deleted for user ID: ${userId}`);
     res.status(200).json({
       status: true,
@@ -106,11 +103,11 @@ exports.deleteTransaction = async (req, res) => {
 
 // Get financial summary
 exports.getSummary = async (req, res) => {
-  const userId = req.params.userId;
+  const userId = req.user.userId;
   logger.info(`Retrieving financial summary for user ID: ${userId}`);
 
   try {
-    const summary = await transactionService.getSummary(req.params.userId);
+    const summary = await transactionService.getSummary(userId);
     logger.info(`Financial summary retrieved for user ID: ${userId}`);
     res.status(200).json({
       status: true,

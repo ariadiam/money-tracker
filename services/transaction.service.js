@@ -19,7 +19,6 @@ async function create(userId, transactionData) {
   const transaction = new Transaction({
     user: userId,
     ...transactionData,
-    // Ensure date is set (defaults to now if not provided)
     date: transactionData.date || new Date() 
   });
   try {
@@ -70,7 +69,7 @@ async function deleteById(transactionId, userId) {
 }
   return await Transaction.findOneAndDelete({
     _id: transactionId,
-    user: userId // Ensures users can only delete their own transactions
+    user: userId 
   });
 }
 

@@ -1,9 +1,14 @@
 const jwt = require('jsonwebtoken');
-const { verifyToken } = require('../services/auth.service');
+const { verifyToken: verifyTokenService } = require('../services/auth.service');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token =  authHeader && authHeader.split(' ')[1];
+}
+
+function verifyToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({
@@ -12,7 +17,7 @@ module.exports = (req, res, next) => {
     });
   }
 
-  const { verified, payload, error } = verifyToken(token);
+  const { verified, payload, error } = verifyTokenService(token);
   if (!verified) {
     return res.status(401).json({
       status: false,
@@ -24,29 +29,27 @@ module.exports = (req, res, next) => {
   next();
 }
 
-function verifyRoles(allowedRole) {
+function verifyRoles(allowedRoles) {
   return (req, res, next) => {
-    if((!req.user || !req.user.role)) {
+    if (!req.user || !req.user.role) {
       return res.status(403).json({
         status: false,
         message: 'Access denied, no user role found'
       });
     }
 
-    const userRole = req.user.role;
-
-    if (!allowedRole.inclusdes(userRole)) {
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         status: false,
-        message: "Access denied, insufficient permissions"
-      })
+        message: 'Access denied, insufficient permissions'
+      });
     }
 
     next();
-  }
+  };
 }
 
 module.exports = {
   verifyToken,
   verifyRoles
-}
+};
