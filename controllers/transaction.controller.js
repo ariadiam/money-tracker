@@ -26,20 +26,23 @@ exports.getUserTransactions = async (req, res) => {
 
 // Add a new transaction
 exports.addTransaction = async (req, res) => {
-  const userId = req.params.userId;
-   logger.info(`Adding new transaction for user ID: ${userId}`, { transactionData: req.body });
+  const userId = req.user.id; 
+  logger.info(`Adding new transaction for user ID: ${userId}`, { transactionData: req.body });
 
   try {
     const transaction = await transactionService.create(
-      req.params.userId,
+      userId,  
       req.body
     );
+
     logger.info(`Transaction created successfully for user ID: ${userId}`, { transactionId: transaction._id });
+
     res.status(201).json({
       status: true,
       data: transaction,
       message: "Transaction added successfully"
     });
+
   } catch (err) {
     logger.error(`Error adding transaction for user ID: ${userId}`, { error: err });
     res.status(400).json({
