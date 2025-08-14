@@ -75,7 +75,7 @@ exports.register = async (req, res) => {
     });
 
   } catch (error) {
-    const statusCode = error.message === 'User already exists' ? 400 : 500;
+    const statusCode = error.message === 'User already exists' ? 409 : 500;
     logger.error(`Registration failed for username: ${username}`, { error: error.message });
     res.status(statusCode).json({
       status: false,
