@@ -16,13 +16,24 @@ async function getByUserId(userId, { limit = 50, skip = 0 } = {}) {
  * Create a new transaction for a user
  */
 async function create(userId, transactionData) {
+  if (transactionData.amount != null) {
+    transactionData.amount = Math.abs(Number(transactionData.amount));
+  }
+  if (transactionData.category) {
+    transactionData.category = String(transactionData.category).trim();
+  }
+  if (transactionData.type && !['income', 'expense'].includes(transactionData.type)) {
+    throw new Error('Invalid type: must be "income" or "expense"');
+  }
+
   const transaction = new Transaction({
     user: userId,
     ...transactionData,
-    date: transactionData.date || new Date() 
+    date: transactionData.date || new Date()
   });
+
   try {
-  return await transaction.save();
+    return await transaction.save();
   } catch (error) {
     throw new Error(`Error creating transaction: ${error.message}`);
   }
@@ -31,7 +42,7 @@ async function create(userId, transactionData) {
 /** 
  * Update a transaction by ID (only if it belongs to the user)
  */
-async function update (transactionId, userId, updateData) {
+async function update(transactionId, userId, updateData) {
   if (!mongoose.Types.ObjectId.isValid(transactionId)) {
     throw new Error('Invalid transaction ID');
   }
@@ -43,34 +54,41 @@ async function update (transactionId, userId, updateData) {
       updates[key] = updateData[key];
     }
   }
-
   if (Object.keys(updates).length === 0) {
     throw new Error('No valid fields provided for update');
   }
+
+  if (updates.amount != null) {
+    updates.amount = Math.abs(Number(updates.amount));
+  }
+  if (updates.category) {
+    updates.category = String(updates.category).trim();
+  }
+  if (updates.type && !['income', 'expense'].includes(updates.type)) {
+    throw new Error('Invalid type: must be "income" or "expense"');
+  }
+ 
   const updatedTransaction = await Transaction.findOneAndUpdate(
-  { _id: transactionId, user: userId },
-  { $set: updates },
-  { new: true, runValidators: true }
-);
+    { _id: transactionId, user: userId },
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
 
   if (!updatedTransaction) {
     throw new Error('Transaction not found or unauthorized');
   }
 
   return updatedTransaction;
-};
+}
 
 /**
  * Delete a transaction by ID (only if it belongs to the user)
  */
 async function deleteById(transactionId, userId) {
   if (!mongoose.Types.ObjectId.isValid(transactionId)) {
-  throw new Error('Invalid transaction ID');
-}
-  return await Transaction.findOneAndDelete({
-    _id: transactionId,
-    user: userId 
-  });
+    throw new Error('Invalid transaction ID');
+  }
+  return await Transaction.findOneAndDelete({ _id: transactionId, user: userId });
 }
 
 /**
@@ -88,7 +106,6 @@ async function getSummary(userId) {
     }
   ]);
 
-  // Format the result
   const summary = {
     income: result.find(item => item._id === 'income')?.total || 0,
     expense: result.find(item => item._id === 'expense')?.total || 0,
