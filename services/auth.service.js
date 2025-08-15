@@ -10,7 +10,7 @@ function generateAccessToken(user) {
     userId: user._id,
     username: user.username,
     email: user.email,
-    role: user.role || 'user'
+    roles: user.roles || 'user'
   }
 
   return jwt.sign(payload,

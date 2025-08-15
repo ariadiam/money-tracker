@@ -31,14 +31,14 @@ function verifyToken(req, res, next) {
 
 function verifyRoles(allowedRoles) {
   return (req, res, next) => {
-    if (!req.user || !req.user.role) {
+    if (!req.user || !req.user.roles) {
       return res.status(403).json({
         status: false,
         message: 'Access denied, no user role found'
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.roles)) {
       return res.status(403).json({
         status: false,
         message: 'Access denied, insufficient permissions'
