@@ -48,21 +48,22 @@ exports.login = async (req, res) => {
 }
 
 exports.register = async (req, res) => {
+  console.log('RAW BODY:', req.body); 
   const { username, password, firstname, lastname, email, phone } = req.body;
   logger.info(`Registration attempt for username: ${username}, email: ${email}`);
 
+  console.log("Model path keys:", User.schema.paths);
+
   try {
     await checkExistingUser(username, email);
-
-    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       username,
-      password: hashedPassword,
+      password,
       firstname,
       lastname,
       email,
       phone,
-      role: 'user'
+      roles: ['user']
     });
     const token = generateAccessToken(newUser);
 
