@@ -99,7 +99,7 @@ exports.googleLogin = async (req, res) => {
     });
   } 
   try {
-    const { user, tokens } = await authService.googleAuth(code);
+    const { user } = await authService.googleAuth(code);
 
   if (!user || typeof user !== 'object') {
       logger.warn('Google login failed: No user returned from auth service');
@@ -110,12 +110,23 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    logger.info(`Google login successful for user: ${user?.email || 'unknown'}`);
-    res.status(200).json({
-      status: true,
-      data: user,
-      message: 'Google login successful'
-    });
+    let dbUser = await User.findOne({ email: user.email });
+    if (!dbUser) {
+      dbUser = await User.create({
+        firstname: user.given_name,
+        lastname: user.family_name,
+        username: user.email.split('@')[0],
+        email: user.email,
+        password: 'google-oauth',
+        roles: ['user']
+      });
+    }
+
+    const token = generateAccessToken(dbUser);
+
+    const redirectUrl = `http://localhost:4200/login?token=${token}`;
+    logger.info(`Google login successful for user: ${user.email}`);
+    return res.redirect(redirectUrl);
 
   } catch (error) {
     logger.error(`Internal server error during Google login: ${error.message}`);
