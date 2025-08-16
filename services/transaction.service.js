@@ -1,9 +1,6 @@
 const Transaction = require('../models/transaction.model');
 const mongoose = require('mongoose');
 
-/**
- * Get all transactions for a user (sorted by date, newest first)
- */
 async function getByUserId(userId, { limit = 50, skip = 0 } = {}) {
   return await Transaction.find({ user: userId })
     .sort({ date: -1 })
@@ -12,9 +9,6 @@ async function getByUserId(userId, { limit = 50, skip = 0 } = {}) {
     .exec();
 }
 
-/**
- * Create a new transaction for a user
- */
 async function create(userId, transactionData) {
   if (transactionData.amount != null) {
     transactionData.amount = Math.abs(Number(transactionData.amount));
@@ -39,9 +33,6 @@ async function create(userId, transactionData) {
   }
 }
 
-/** 
- * Update a transaction by ID (only if it belongs to the user)
- */
 async function update(transactionId, userId, updateData) {
   if (!mongoose.Types.ObjectId.isValid(transactionId)) {
     throw new Error('Invalid transaction ID');
@@ -81,9 +72,6 @@ async function update(transactionId, userId, updateData) {
   return updatedTransaction;
 }
 
-/**
- * Delete a transaction by ID (only if it belongs to the user)
- */
 async function deleteById(transactionId, userId) {
   if (!mongoose.Types.ObjectId.isValid(transactionId)) {
     throw new Error('Invalid transaction ID');
@@ -91,9 +79,6 @@ async function deleteById(transactionId, userId) {
   return await Transaction.findOneAndDelete({ _id: transactionId, user: userId });
 }
 
-/**
- * Get financial summary (income, expense, balance) for a user
- */
 async function getSummary(userId) {
   const result = await Transaction.aggregate([
     { $match: { user: mongoose.Types.ObjectId(userId) } },

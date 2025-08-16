@@ -1,7 +1,6 @@
 const transactionService = require('../services/transaction.service');
 const logger = require('../logger/logger');
 
-// Get all transactions for a user
 exports.getUserTransactions = async (req, res) => {
   const userId = req.user.userId
   logger.info(`Fetching all transactions for user ID: ${userId}`);
@@ -24,7 +23,6 @@ exports.getUserTransactions = async (req, res) => {
   }
 };
 
-// Add a new transaction
 exports.addTransaction = async (req, res) => {
   const userId = req.user.userId; 
   logger.info(`Adding new transaction for user ID: ${userId}`, { transactionData: req.body });
@@ -78,7 +76,6 @@ exports.updateTransaction = async (req, res) => {
   }
 };
 
-// Delete a transaction
 exports.deleteTransaction = async (req, res) => {
   const transactionId = req.params.transactionId;
   const userId = req.user.userId;;
@@ -101,7 +98,6 @@ exports.deleteTransaction = async (req, res) => {
   }
 };
 
-// Get financial summary
 exports.getSummary = async (req, res) => {
   const userId = req.user.userId;
   logger.info(`Retrieving financial summary for user ID: ${userId}`);
