@@ -5,6 +5,7 @@ const { JWT_SECRET } = process.env;
 const { generateAccessToken, verifyToken, validateCredentials, checkExistingUser } = require('../services/auth.service');
 const logger = require('../logger/logger');
 const authService = require('../services/auth.service');
+const { OAuth2Client } = require('google-auth-library');
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -85,6 +86,26 @@ exports.register = async (req, res) => {
     });
   }
 }
+
+exports.googleInit = (req, res) => {
+  const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+  const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
+
+  if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI) {
+    return res.status(500).json({ status: false, message: 'Google OAuth env vars missing' });
+  }
+
+  const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+  const url = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: ['openid', 'email', 'profile']
+  });
+
+  return res.redirect(url);
+};
 
 exports.googleLogin = async (req, res) => {
   const code = req.query.code;
