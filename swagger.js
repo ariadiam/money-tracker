@@ -2,11 +2,25 @@ const m2s = require('mongoose-to-swagger');
 const User = require('./models/user.model');
 const Transaction = require('./models/transaction.model');
 
+const baseUser = m2s(User);
+
+const SafeUser = {
+  ...baseUser,
+  properties: {
+    ...baseUser.properties,
+    password: { type: 'string', writeOnly: true },
+    _id: { type: 'string', readOnly: true },
+    createdAt: { type: 'string', format: 'date-time', readOnly: true },
+    updatedAt: { type: 'string', format: 'date-time', readOnly: true }
+  },
+  required: (baseUser.required || []).filter(r => r !== 'password')
+};
+
 exports.options = {
   openapi: "3.1.0",
   info: {
     version: "1.0.0",
-    title: "DollaBillz Transactions API",
+    title: "Money-Tracker Transactions API",
     description: "API for managing users and their financial transactions.",
     contact: {
       name: "API Support",
@@ -15,23 +29,25 @@ exports.options = {
     }
   },
   servers: [
-    {
-      url: "http://localhost:3000",
-      description: "Local Server"
-    },
-    {
-      url: "http://www.backend.aria.gr",
-      description: "Testing server"
-    }
+    { url: "http://localhost:3000", description: "Local Server" },
+    { url: "http://www.backend.aria.gr", description: "Testing server" }
   ],
   tags: [
     { name: "Users", description: "User management" },
     { name: "Transactions", description: "User transactions" },
     { name: "Auth", description: "Authentication" }
   ],
+  security: [{ bearerAuth: [] }],
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      }
+    },
     schemas: {
-      User: m2s(User),
+      User: SafeUser,
       Transaction: m2s(Transaction),
       UserResponse: {
         type: "object",
@@ -132,7 +148,8 @@ exports.options = {
         type: "object",
         properties: {
           status: { type: "boolean", example: false },
-          error: { type: "string" }
+          data: { type: "null", example: null },
+          message: { type: "string", example: "User not found" }
         }
       }
     }
@@ -142,7 +159,7 @@ exports.options = {
     "/api/auth/login": {
       post: {
         tags: ["Auth"],
-        summary: "Login user",
+        summary: "Login user and get JWT token",
         requestBody: {
           required: true,
           content: {
@@ -152,17 +169,10 @@ exports.options = {
           }
         },
         responses: {
-          200: {
-            description: "Login successful",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/AuthLoginResponse" }
-              }
-            }
-          },
-          400: { description: "Missing credentials", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-          401: { description: "Invalid credentials", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-          404: { description: "User not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+          200: { description: "Login successful", content: { "application/json": { schema: { $ref: "#/components/schemas/AuthLoginResponse" } } } },
+          400: { description: "Missing credentials" },
+          401: { description: "Invalid credentials" },
+          404: { description: "User not found" }
         }
       }
     },
@@ -172,177 +182,81 @@ exports.options = {
         summary: "Register new user",
         requestBody: {
           required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/AuthRegisterRequest" }
-            }
-          }
+          content: { "application/json": { schema: { $ref: "#/components/schemas/AuthRegisterRequest" } } }
         },
         responses: {
-          201: {
-            description: "User registered",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/AuthLoginResponse" }
-              }
-            }
-          },
-          400: { description: "User already exists or validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+          201: { description: "User registered", content: { "application/json": { schema: { $ref: "#/components/schemas/AuthLoginResponse" } } } },
+          409: { description: "User already exists" },
+          400: { description: "Validation error" }
+        }
+      }
+    },
+    "/api/auth/google": {
+      get: {
+        tags: ["Auth"],
+        summary: "Start Google OAuth (redirect to Google)",
+        responses: { 302: { description: "Redirect to Google OAuth" } }
+      }
+    },
+    "/api/auth/google/callback": {
+      get: {
+        tags: ["Auth"],
+        summary: "Google OAuth callback",
+        parameters: [{ name: "code", in: "query", required: true, schema: { type: "string" } }],
+        responses: {
+          302: { description: "Redirects back to frontend with token" },
+          400: { description: "Missing code" }
         }
       }
     },
 
     // Users
-    "/api/users": {
+    "/api/user": {
       get: {
         tags: ["Users"],
         summary: "Get all users",
-        responses: {
-          200: {
-            description: "List of users",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserArrayResponse" }
-              }
-            }
-          }
-        }
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: "List of users" }, 401: { description: "Unauthorized" } }
       },
       post: {
         tags: ["Users"],
         summary: "Create user (admin only)",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/AuthRegisterRequest" }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: "User created",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserResponse" }
-              }
-            }
-          },
-          400: { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
-        }
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/AuthRegisterRequest" } } } },
+        responses: { 201: { description: "User created" }, 400: { description: "Validation error" }, 403: { description: "Forbidden" } }
       }
     },
-    "/api/users/{userId}": {
+    "/api/user/{userId}": {
       get: {
         tags: ["Users"],
         summary: "Get user by ID",
-        parameters: [
-          {
-            name: "userId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
-        responses: {
-          200: {
-            description: "User details",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserResponse" }
-              }
-            }
-          },
-          404: { description: "User not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
-        }
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "userId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "User details" }, 404: { description: "Not found" } }
       },
       patch: {
         tags: ["Users"],
         summary: "Update user (admin only)",
-        parameters: [
-          {
-            name: "userId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  firstname: { type: "string" },
-                  lastname: { type: "string" },
-                  email: { type: "string" },
-                  phone: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        type: { type: "string" },
-                        number: { type: "string" }
-                      }
-                    }
-                  },
-                  password: { type: "string" }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          200: {
-            description: "User updated",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserResponse" }
-              }
-            }
-          },
-          404: { description: "User not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
-        }
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "userId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/AuthRegisterRequest" } } } },
+        responses: { 200: { description: "User updated" }, 404: { description: "Not found" } }
       },
       delete: {
         tags: ["Users"],
         summary: "Delete user (admin only)",
-        parameters: [
-          {
-            name: "userId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
-        responses: {
-          200: {
-            description: "User and associated transactions deleted",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserResponse" }
-              }
-            }
-          },
-          404: { description: "User not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
-        }
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "userId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { 200: { description: "User deleted" }, 404: { description: "Not found" } }
       }
     },
 
-    // Transactions
-    "/api/users/{userId}/transactions": {
+        // Transactions
+    "/api/transactions": {
       get: {
         tags: ["Transactions"],
-        summary: "Get all transactions for a user",
-        parameters: [
-          {
-            name: "userId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
+        summary: "Get all transactions for the logged-in user",
+        security: [{ bearerAuth: [] }],
         responses: {
           200: {
             description: "List of transactions",
@@ -356,15 +270,8 @@ exports.options = {
       },
       post: {
         tags: ["Transactions"],
-        summary: "Add a new transaction for a user",
-        parameters: [
-          {
-            name: "userId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
+        summary: "Add a new transaction for the logged-in user",
+        security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
           content: {
@@ -392,16 +299,19 @@ exports.options = {
               }
             }
           },
-          400: { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+          400: {
+            description: "Validation error",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
         }
       }
     },
-    "/api/users/{userId}/transactions/{transactionId}": {
+    "/api/transactions/{transactionId}": {
       patch: {
         tags: ["Transactions"],
         summary: "Update a transaction",
+        security: [{ bearerAuth: [] }],
         parameters: [
-          { name: "userId", in: "path", required: true, schema: { type: "string" } },
           { name: "transactionId", in: "path", required: true, schema: { type: "string" } }
         ],
         requestBody: {
@@ -430,14 +340,17 @@ exports.options = {
               }
             }
           },
-          404: { description: "Transaction not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+          404: {
+            description: "Transaction not found",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
         }
       },
       delete: {
         tags: ["Transactions"],
         summary: "Delete a transaction",
+        security: [{ bearerAuth: [] }],
         parameters: [
-          { name: "userId", in: "path", required: true, schema: { type: "string" } },
           { name: "transactionId", in: "path", required: true, schema: { type: "string" } }
         ],
         responses: {
@@ -455,17 +368,18 @@ exports.options = {
               }
             }
           },
-          404: { description: "Transaction not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+          404: {
+            description: "Transaction not found",
+            content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } }
+          }
         }
       }
     },
-    "/api/users/{userId}/transactions/summary": {
+    "/api/transactions/summary": {
       get: {
         tags: ["Transactions"],
-        summary: "Get financial summary for a user",
-        parameters: [
-          { name: "userId", in: "path", required: true, schema: { type: "string" } }
-        ],
+        summary: "Get financial summary for the logged-in user",
+        security: [{ bearerAuth: [] }],
         responses: {
           200: {
             description: "Summary returned",
@@ -479,4 +393,4 @@ exports.options = {
       }
     }
   }
-}
+};
